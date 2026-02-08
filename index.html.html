@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Security Verification</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: #0e1621; /* Telegram Dark Theme */
+            color: #ffffff;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .card {
+            background-color: #17212b;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            text-align: center;
+            max-width: 350px;
+            width: 90%;
+            border: 1px solid #2b5278;
+        }
+        .icon { font-size: 50px; margin-bottom: 20px; }
+        h2 { font-size: 22px; margin-bottom: 10px; color: #5eb5f7; }
+        p { color: #81b3d2; font-size: 14px; line-height: 1.5; margin-bottom: 25px; }
+        .btn {
+            background-color: #2481cc;
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            transition: 0.3s;
+        }
+        .btn:hover { background-color: #28a1ff; }
+        .btn:disabled { background-color: #3d4b59; cursor: not-allowed; }
+        .footer-text { font-size: 11px; color: #546d82; margin-top: 20px; }
+        
+        /* Loading Animation */
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="icon">🛡️</div>
+    <h2>Device Security</h2>
+    <p>We need to verify your device to prevent multiple accounts and ensure bot stability.</p>
+    
+    <button class="btn" id="verifyBtn" onclick="processVerification()">
+        <span id="btnText">Verify My Device</span>
+        <div id="loader" class="spinner"></div>
+    </button>
+
+    <div class="footer-text">
+        Powered by DeviceFingerprint™ <br>
+        Your IP and Hardware ID will be checked.
+    </div>
+</div>
+
+<script>
+    // URL থেকে ডাটা রিসিভ করা
+    const params = new URLSearchParams(window.location.search);
+    const uId = params.get('userId');
+    const wUrl = params.get('webhookUrl');
+
+    function processVerification() {
+        if (!uId || !wUrl) {
+            alert("Error: Invalid Request! Please open from the Telegram Bot.");
+            return;
+        }
+
+        // UI আপডেট
+        const btn = document.getElementById('verifyBtn');
+        const btnText = document.getElementById('btnText');
+        const loader = document.getElementById('loader');
+
+        btn.disabled = true;
+        btnText.style.display = 'none';
+        loader.style.display = 'block';
+
+        // ১. ডিভাইস ফিঙ্গারপ্রিন্ট তৈরি (Advanced Logic)
+        const fingerprintData = {
+            ua: navigator.userAgent,
+            scr: screen.width + "x" + screen.height,
+            mem: navigator.deviceMemory || "unk",
+            plat: navigator.platform,
+            lang: navigator.language
+        };
+        
+        // তথ্যগুলোকে বেস৬৪ কোডে রূপান্তর করে ইউনিক আইডি বানানো
+        const devId = btoa(JSON.stringify(fingerprintData)).substring(0, 32);
+
+        // ২. বটের ওয়েব হুকে তথ্য পাঠানো
+        const finalWebhook = `${wUrl}&userId=${uId}&devId=${devId}`;
+
+        fetch(finalWebhook)
+            .then(() => {
+                document.body.innerHTML = `
+                    <div class="card">
+                        <div class="icon">✅</div>
+                        <h2 style="color:#4cd137">Success!</h2>
+                        <p>Device identity confirmed. You can now close this page and return to the bot.</p>
+                    </div>
+                `;
+            })
+            .catch(err => {
+                alert("Connection Error! Try again.");
+                btn.disabled = false;
+                btnText.style.display = 'block';
+                loader.style.display = 'none';
+            });
+    }
+</script>
+
+</body>
+</html>
