@@ -3,19 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Device Verification</title>
+    <title>Secure Verification</title>
     <style>
         body { background-color: #0e1621; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background-color: #17212b; padding: 30px; border-radius: 15px; text-align: center; border: 1px solid #2b5278; width: 90%; max-width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-        .btn { background-color: #2481cc; color: white; border: none; padding: 15px; border-radius: 8px; width: 100%; cursor: pointer; font-weight: bold; margin-top: 20px; font-size: 16px; }
+        .card { background-color: #17212b; padding: 30px; border-radius: 15px; text-align: center; border: 1px solid #2b5278; width: 90%; max-width: 350px; }
+        .btn { background-color: #2481cc; color: white; border: none; padding: 15px; border-radius: 8px; width: 100%; cursor: pointer; font-weight: bold; margin-top: 20px; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <div style="font-size: 50px; margin-bottom: 10px;">🛡️</div>
-        <h2>Device Check</h2>
-        <p style="color: #81b3d2;">Click the button below to verify your device identity.</p>
-        <button class="btn" onclick="verify()">Verify Me</button>
+    <div class="card" id="verifyBox">
+        <h2>Device Verification</h2>
+        <p>বট ব্যবহার করতে নিচের বাটনে ক্লিক করুন।</p>
+        <button class="btn" onclick="startVerify()">Verify Device</button>
     </div>
 
     <script>
@@ -23,19 +22,24 @@
         const uId = params.get('userId');
         const wUrl = params.get('webhookUrl');
 
-        function verify() {
-            if (!uId || !wUrl) {
-                alert("Invalid Request! Open from the bot.");
-                return;
-            }
+        function startVerify() {
+            if (!uId || !wUrl) { alert("Invalid Request"); return; }
 
-            // ডিভাইসের ইউনিক ফিঙ্গারপ্রিন্ট তৈরি
-            const deviceKey = navigator.userAgent + screen.width + navigator.platform;
-            const fingerprint = btoa(deviceKey).substring(0, 20);
+            // ডিভাইস ফিঙ্গারপ্রিন্ট তৈরি
+            const fingerprint = btoa(navigator.userAgent + screen.width + navigator.platform).substring(0, 20);
             
-            // সরাসরি Webhook URL-এ রিডাইরেক্ট করা (যাতে ডাটা ১০০% বটের কাছে পৌঁছায়)
+            // বটের কাছে ডাটা পাঠানো
             const finalUrl = wUrl + "&u_id=" + uId + "&d_id=" + fingerprint;
-            window.location.href = finalUrl;
+
+            // এটি ব্রাউজারেই ডাটা প্রসেস করবে, JSON দেখাবে না
+            fetch(finalUrl, { mode: 'no-cors' })
+            .then(() => {
+                document.getElementById('verifyBox').innerHTML = `
+                    <h2 style="color:#4cd137">✅ Success!</h2>
+                    <p>আপনার তথ্য বটের কাছে পাঠানো হয়েছে। এখন টেলিগ্রাম বটে ফিরে যান।</p>
+                `;
+            })
+            .catch(() => alert("Error connecting to bot!"));
         }
     </script>
 </body>
