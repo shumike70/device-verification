@@ -3,115 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Device Verification | Bot Security</title>
+    <title>Device Verification</title>
     <style>
-        body {
-            background-color: #0e1621;
-            color: #ffffff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .container {
-            background-color: #17212b;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
-            border: 1px solid #2b5278;
-        }
-        h2 { margin-bottom: 10px; color: #5eb5f7; }
-        p { color: #81b3d2; font-size: 14px; line-height: 1.6; }
-        .btn {
-            background-color: #2481cc;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 18px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.3s;
-            margin-top: 20px;
-            width: 100%;
-        }
-        .btn:hover { background-color: #28a1ff; }
-        .loader {
-            display: none;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #2481cc;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        body { background-color: #0e1621; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background-color: #17212b; padding: 30px; border-radius: 15px; text-align: center; border: 1px solid #2b5278; width: 90%; max-width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .btn { background-color: #2481cc; color: white; border: none; padding: 15px; border-radius: 8px; width: 100%; cursor: pointer; font-weight: bold; margin-top: 20px; font-size: 16px; }
     </style>
 </head>
 <body>
+    <div class="card">
+        <div style="font-size: 50px; margin-bottom: 10px;">🛡️</div>
+        <h2>Device Check</h2>
+        <p style="color: #81b3d2;">Click the button below to verify your device identity.</p>
+        <button class="btn" onclick="verify()">Verify Me</button>
+    </div>
 
-<div class="container" id="verifyBox">
-    <h2>Device Verification</h2>
-    <p>To prevent multi-accounts, we need to verify your device identity. Only one account is allowed per device.</p>
-    
-    <div id="loader" class="loader"></div>
-    <button class="btn" id="verifyBtn" onclick="startVerification()">Verify Me</button>
-    
-    <p style="font-size: 10px; margin-top: 20px; opacity: 0.6;">
-        By clicking, we will check your Device ID and IP for security purposes.
-    </p>
-</div>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const uId = params.get('userId');
+        const wUrl = params.get('webhookUrl');
 
-<script>
-    // URL থেকে ডাটা সংগ্রহ করা
-    const urlParams = new URLSearchParams(window.location.search);
-    const userId = urlParams.get('userId');
-    const webhookUrl = urlParams.get('webhookUrl');
+        function verify() {
+            if (!uId || !wUrl) {
+                alert("Invalid Request! Open from the bot.");
+                return;
+            }
 
-    function startVerification() {
-        if (!userId || !webhookUrl) {
-            alert("Error: Invalid Request! Open from the bot.");
-            return;
+            // ডিভাইসের ইউনিক ফিঙ্গারপ্রিন্ট তৈরি
+            const deviceKey = navigator.userAgent + screen.width + navigator.platform;
+            const fingerprint = btoa(deviceKey).substring(0, 20);
+            
+            // সরাসরি Webhook URL-এ রিডাইরেক্ট করা (যাতে ডাটা ১০০% বটের কাছে পৌঁছায়)
+            const finalUrl = wUrl + "&u_id=" + uId + "&d_id=" + fingerprint;
+            window.location.href = finalUrl;
         }
-
-        document.getElementById('verifyBtn').style.display = 'none';
-        document.getElementById('loader').style.display = 'block';
-
-        // ১. ডিভাইসের তথ্য (Fingerprint) সংগ্রহ
-        const deviceData = {
-            screen: screen.width + "x" + screen.height,
-            browser: navigator.userAgent,
-            lang: navigator.language,
-            platform: navigator.platform
-        };
-        
-        // তথ্যগুলোকে একটি ইউনিক স্ট্রিংয়ে রূপান্তর
-        const fingerprint = btoa(JSON.stringify(deviceData));
-
-        // ২. বটের ওয়েব হুকে তথ্য পাঠানো (Fetch API)
-        // আমরা স্ট্যাটাস হিসেবে 'success' এবং ফিঙ্গারপ্রিন্ট পাঠাচ্ছি
-        const finalUrl = `${webhookUrl}&status=check&userId=${userId}&devId=${fingerprint}`;
-
-        fetch(finalUrl)
-            .then(response => {
-                document.getElementById('verifyBox').innerHTML = `
-                    <h2 style="color: #4cd137;">Success!</h2>
-                    <p>Your device has been verified. You can now go back to the bot.</p>
-                `;
-            })
-            .catch(err => {
-                alert("Verification Failed. Check your internet connection.");
-                document.getElementById('verifyBtn').style.display = 'block';
-                document.getElementById('loader').style.display = 'none';
-            });
-    }
-</script>
-
+    </script>
 </body>
 </html>
